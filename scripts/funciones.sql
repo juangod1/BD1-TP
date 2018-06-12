@@ -61,7 +61,7 @@ BEGIN
   -- usuario + fecha_hora_ret unicos --
   -------------------------------------
   FOR tuple IN select * from aux LOOP
-    CREATE TABLE matches AS SELECT * FROM aux WHERE tuple.id_usuario || tuple.fecha_hora_retiro = aux.id_usuario || aux.fecha_hora_retiro ORDER BY tiempo_uso;
+    CREATE TABLE matches AS SELECT * FROM aux WHERE tuple.id_usuario || tuple.fecha_hora_retiro = aux.id_usuario || aux.fecha_hora_retiro ORDER BY CAST(replace(replace(replace(aux.tiempo_uso, 'H ', ''), 'MIN ', ''), 'SEG', '') AS INTERVAL);
 
     FOR match IN SELECT * FROM matches LIMIT 1 LOOP
       DELETE FROM aux match;
@@ -128,7 +128,7 @@ BEGIN
         recorrido_final.fecha_hora_dev = tuple.fecha_hora_dev,
         recorrido_final.est_destino = tuple.est_destino,
         recorrido_final.est_origen = est_origen
-        WHERE usuario = recorrido_final.usuario AND (fecha_hora_ret <= recorrido_final.fecha_hora_dev) AND (fecha_hora_dev >= recorrido_final.fecha_hora_ret);
+        WHERE tuple.usuario = recorrido_final.usuario AND tuple.fecha_hora_ret = recorrido_final.fecha_hora_ret AND tuple.fecha_hora_dev = recorrido_final.fecha_hora_dev;
       END IF;
 
       -- tupla de tabla solapa menor a tupla dada --
@@ -137,7 +137,7 @@ BEGIN
       recorrido_final.fecha_hora_dev = fecha_hora_dev,
       recorrido_final.est_destino = est_destino,
       recorrido_final.est_origen = tuple.est_origen
-      WHERE usuario = recorrido_final.usuario AND (fecha_hora_ret <= recorrido_final.fecha_hora_dev) AND (fecha_hora_dev >= recorrido_final.fecha_hora_ret);
+      WHERE tuple.usuario = recorrido_final.usuario AND tuple.fecha_hora_ret = recorrido_final.fecha_hora_ret AND tuple.fecha_hora_dev = recorrido_final.fecha_hora_dev;
 
     END IF;
   END LOOP;
