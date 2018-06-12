@@ -32,6 +32,18 @@ CREATE TABLE aux
 
 \copy aux FROM test1.csv csv header delimiter ';'
 
+-- https://stackoverflow.com/questions/16195986/isnumeric-with-postgresql --
+CREATE OR REPLACE FUNCTION isnumeric(text) RETURNS BOOLEAN AS $$
+DECLARE x NUMERIC;
+BEGIN
+    x = $1::NUMERIC;
+    RETURN TRUE;
+EXCEPTION WHEN others THEN
+    RETURN FALSE;
+END;
+$$
+STRICT
+LANGUAGE plpgsql IMMUTABLE;
 
 -- Migracion --
 
@@ -49,7 +61,7 @@ BEGIN
   -- usuario + fecha_hora_ret unicos --
   -------------------------------------
   FOR tuple IN select * from aux LOOP
-    CREATE TABLE matches AS SELECT * FROM aux WHERE tuple.id_usuario + tuple.fecha_hora_retiro = aux.id_usuario + aux.fecha_hora_retiro ORDER BY tiempo_uso;
+    CREATE TABLE matches AS SELECT * FROM aux WHERE tuple.id_usuario || tuple.fecha_hora_retiro = aux.id_usuario || aux.fecha_hora_retiro ORDER BY tiempo_uso;
 
     FOR match IN SELECT * FROM matches LIMIT 1 LOOP
       DELETE FROM aux match;
@@ -82,7 +94,8 @@ BEGIN
     IF aRec.destino_estacion IS NULL THEN
       CONTINUE;
     END IF;
-    IF aRec.tiempo_uso IS NULL OR aRec.tiempo_uso<0 OR NOT isnumeric(aRec.tiempo_uso) THEN
+    IF aRec.tiempo_uso IS NULL OR CAST(replace(replace(replace(aRec.tiempo_uso, 'H ', ''), 'MIN ', ''), 'SEG', '') AS INTEGER)<0
+     OR NOT isnumeric(replace(replace(replace(aRec.tiempo_uso, 'H ', ''), 'MIN ', ''), 'SEG', '')) THEN
       CONTINUE;
     END IF;
     -------------------------------------
@@ -96,19 +109,6 @@ BEGIN
 END;
 $$ LANGUAGE PLPGSQL;
 
-
--- https://stackoverflow.com/questions/16195986/isnumeric-with-postgresql --
-CREATE OR REPLACE FUNCTION isnumeric(text) RETURNS BOOLEAN AS $$
-DECLARE x NUMERIC;
-BEGIN
-    x = $1::NUMERIC;
-    RETURN TRUE;
-EXCEPTION WHEN others THEN
-    RETURN FALSE;
-END;
-$$
-STRICT
-LANGUAGE plpgsql IMMUTABLE;
 
 CREATE OR REPLACE FUNCTION insertar_recorrido(periodo TEXT, usuario INTEGER, fecha_hora_ret TIMESTAMP, est_origen INTEGER, est_destino INTEGER, fecha_hora_dev TIMESTAMP)
 RETURNS VOID AS $$
