@@ -120,11 +120,25 @@ BEGIN
   ---------------------------
   FOR tuple IN SELECT * FROM recorrido_final LOOP
     IF usuario = tuple.usuario AND (fecha_hora_ret <= tuple.fecha_hora_dev) AND (fecha_hora_dev >= tuple.fecha_hora_ret) THEN
-      IF fecha_hora_retiro<=tuple.fecha_hora_retiro THEN
-      
-      ELSE THEN
 
+      -- tupla dada solapa menor a tupla de tabla --
+      IF fecha_hora_ret<=tuple.fecha_hora_ret THEN
+        UPDATE recorrido_final SET
+        recorrido_final.fecha_hora_ret = fecha_hora_retiro,
+        recorrido_final.fecha_hora_dev = tuple.fecha_hora_dev,
+        recorrido_final.est_destino = tuple.est_destino,
+        recorrido_final.est_origen = est_origen
+        WHERE usuario = recorrido_final.usuario AND (fecha_hora_ret <= recorrido_final.fecha_hora_dev) AND (fecha_hora_dev >= recorrido_final.fecha_hora_ret);
       END IF;
+
+      -- tupla de tabla solapa menor a tupla dada --
+      UPDATE recorrido_final SET
+      recorrido_final.fecha_hora_ret = tuple.fecha_hora_retiro,
+      recorrido_final.fecha_hora_dev = fecha_hora_dev,
+      recorrido_final.est_destino = est_destino,
+      recorrido_final.est_origen = tuple.est_origen
+      WHERE usuario = recorrido_final.usuario AND (fecha_hora_ret <= recorrido_final.fecha_hora_dev) AND (fecha_hora_dev >= recorrido_final.fecha_hora_ret);
+
     END IF;
   END LOOP;
   ---------------------------
