@@ -56,8 +56,6 @@ DECLARE
   match RECORD;
   aux1 RECORD;
 BEGIN
- 	OPEN cursor;
-
   -------------------------------------
   -- usuario + fecha_hora_ret unicos --
   -------------------------------------
@@ -90,7 +88,8 @@ BEGIN
     DROP TABLE matches;
   END LOOP;
   -------------------------------------
-
+  
+  	OPEN cursor;
  	LOOP
  		FETCH cursor INTO aRec;
  		EXIT WHEN NOT FOUND;
