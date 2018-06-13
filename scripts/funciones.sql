@@ -128,9 +128,15 @@ $$ LANGUAGE PLPGSQL;
 
 CREATE OR REPLACE FUNCTION insertar_recorrido(periodo TEXT, usuario INTEGER, fecha_hora_ret TIMESTAMP, est_origen INTEGER, est_destino INTEGER, fecha_hora_dev TIMESTAMP)
 RETURNS VOID AS $$
-#variable_conflict use_variable
+#variable_conflict use_column
 DECLARE
 tuple RECORD;
+pperiodo TEXT = periodo;
+pusuario INTEGER = usuario;
+pfecha_hora_ret TIMESTAMP = fecha_hora_ret;
+pest_origen INTEGER = est_origen;
+pest_destino INTEGER = est_destino;
+pfecha_hora_dev TIMESTAMP = fecha_hora_dev;
 BEGIN
   ---------------------------
   -- solapados encadenados --
@@ -141,14 +147,12 @@ BEGIN
       -- tupla dada solapa menor a tupla de tabla --
       CASE
         WHEN fecha_hora_ret<=tuple.fecha_hora_ret THEN
-          --DELETE FROM recorrido_final WHERE usuario = tuple.usuario AND (fecha_hora_ret <= tuple.fecha_hora_dev) AND (fecha_hora_dev >= tuple.fecha_hora_ret);
-          --INSERT INTO recorrido_final VALUES (periodo,usuario,fecha_hora_ret,est_origen,tuple.est_destino,tuple.fecha_hora_dev);
+          UPDATE recorrido_final set fecha_hora_ret = pfecha_hora_ret, est_origen = pest_origen WHERE recorrido_final=tuple;
         ELSE
       -- tupla de tabla solapa menor a tupla dada --
-          --DELETE FROM recorrido_final WHERE usuario = tuple.usuario AND (fecha_hora_ret <= tuple.fecha_hora_dev) AND (fecha_hora_dev >= tuple.fecha_hora_ret);
-          --INSERT INTO recorrido_final VALUES (periodo,usuario,tuple.fecha_hora_ret,tuple.est_origen,est_destino,fecha_hora_dev);
+          UPDATE recorrido_final set est_destino = pest_destino, fecha_hora_dev = Pfecha_hora_dev WHERE recorrido_final=tuple;
       END CASE;
-
+    RETURN;
     END IF;
   END LOOP;
   ---------------------------
