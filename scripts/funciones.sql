@@ -68,17 +68,14 @@ BEGIN
 
     IF (select count(*) from matches)>1 then
       FOR match IN SELECT * FROM matches LOOP
-        raise notice 'match: %', match;
       END LOOP;
       FOR match IN SELECT * FROM matches LIMIT 1 LOOP
-        raise notice 'First: %', match;
         DELETE FROM aux WHERE (match.periodo = aux.periodo AND match.origen_estacion = aux.origen_estacion AND
         match.nombre_origen = aux.nombre_origen AND match.destino_estacion = aux.destino_estacion AND
         match.nombre_destino = aux.nombre_destino AND match.tiempo_uso=aux.tiempo_uso AND match.fecha_creacion=aux.fecha_creacion);
       END LOOP;
 
       FOR match IN SELECT * FROM matches OFFSET 2 LOOP
-        raise notice 'Second: %', match;
         DELETE FROM aux WHERE (match.periodo = aux.periodo AND match.origen_estacion = aux.origen_estacion AND
         match.nombre_origen = aux.nombre_origen AND match.destino_estacion = aux.destino_estacion AND
         match.nombre_destino = aux.nombre_destino AND match.tiempo_uso=aux.tiempo_uso AND match.fecha_creacion=aux.fecha_creacion);
@@ -88,7 +85,7 @@ BEGIN
     DROP TABLE matches;
   END LOOP;
   -------------------------------------
-  
+
   	OPEN cursor;
  	LOOP
  		FETCH cursor INTO aRec;
@@ -149,7 +146,7 @@ BEGIN
           UPDATE recorrido_final set fecha_hora_ret = pfecha_hora_ret, est_origen = pest_origen WHERE recorrido_final=tuple;
         ELSE
       -- tupla de tabla solapa menor a tupla dada --
-          UPDATE recorrido_final set est_destino = pest_destino, fecha_hora_dev = Pfecha_hora_dev WHERE recorrido_final=tuple;
+          UPDATE recorrido_final set est_destino = pest_destino, fecha_hora_dev = pfecha_hora_dev WHERE recorrido_final=tuple;
       END CASE;
     RETURN;
     END IF;
