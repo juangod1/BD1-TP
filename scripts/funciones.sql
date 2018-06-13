@@ -54,6 +54,7 @@ DECLARE
 	cursor CURSOR FOR SELECT * FROM aux;
   tuple RECORD;
   match RECORD;
+  aux1 RECORD;
 BEGIN
  	OPEN cursor;
 
@@ -61,15 +62,30 @@ BEGIN
   -- usuario + fecha_hora_ret unicos --
   -------------------------------------
   FOR tuple IN select * from aux LOOP
-    CREATE TABLE matches AS SELECT * FROM aux WHERE tuple.id_usuario || tuple.fecha_hora_retiro = aux.id_usuario || aux.fecha_hora_retiro ORDER BY CAST(replace(replace(replace(aux.tiempo_uso, 'H ', ''), 'MIN ', ''), 'SEG', '') AS INTERVAL);
+    CREATE TABLE matches AS SELECT * FROM aux WHERE
+    tuple.id_usuario || tuple.fecha_hora_retiro = aux.id_usuario || aux.fecha_hora_retiro
+    ORDER BY CAST(replace(replace(replace(aux.tiempo_uso, 'H ', 'H'), 'MIN ', 'M'), 'SEG', 'S') AS INTERVAL);
 
-    FOR match IN SELECT * FROM matches LIMIT 1 LOOP
-      DELETE FROM aux match;
-    END LOOP;
+    raise notice 'Loop';
 
-    FOR match IN SELECT * FROM matches OFFSET 2 LOOP
-      DELETE FROM aux match;
-    END LOOP;
+    IF (select count(*) from matches)>1 then
+      FOR match IN SELECT * FROM matches LOOP
+        raise notice 'match: %', match;
+      END LOOP;
+      FOR match IN SELECT * FROM matches LIMIT 1 LOOP
+        raise notice 'First: %', match;
+        DELETE FROM aux WHERE (match.periodo = aux.periodo AND match.origen_estacion = aux.origen_estacion AND
+        match.nombre_origen = aux.nombre_origen AND match.destino_estacion = aux.destino_estacion AND
+        match.nombre_destino = aux.nombre_destino AND match.tiempo_uso=aux.tiempo_uso AND match.fecha_creacion=aux.fecha_creacion);
+      END LOOP;
+
+      FOR match IN SELECT * FROM matches OFFSET 2 LOOP
+        raise notice 'Second: %', match;
+        DELETE FROM aux WHERE (match.periodo = aux.periodo AND match.origen_estacion = aux.origen_estacion AND
+        match.nombre_origen = aux.nombre_origen AND match.destino_estacion = aux.destino_estacion AND
+        match.nombre_destino = aux.nombre_destino AND match.tiempo_uso=aux.tiempo_uso AND match.fecha_creacion=aux.fecha_creacion);
+      END LOOP;
+    END IF;
 
     DROP TABLE matches;
   END LOOP;
@@ -112,6 +128,7 @@ $$ LANGUAGE PLPGSQL;
 
 CREATE OR REPLACE FUNCTION insertar_recorrido(periodo TEXT, usuario INTEGER, fecha_hora_ret TIMESTAMP, est_origen INTEGER, est_destino INTEGER, fecha_hora_dev TIMESTAMP)
 RETURNS VOID AS $$
+#variable_conflict use_variable
 DECLARE
 tuple RECORD;
 BEGIN
@@ -122,22 +139,15 @@ BEGIN
     IF usuario = tuple.usuario AND (fecha_hora_ret <= tuple.fecha_hora_dev) AND (fecha_hora_dev >= tuple.fecha_hora_ret) THEN
 
       -- tupla dada solapa menor a tupla de tabla --
-      IF fecha_hora_ret<=tuple.fecha_hora_ret THEN
-        UPDATE recorrido_final SET
-        recorrido_final.fecha_hora_ret = fecha_hora_retiro,
-        recorrido_final.fecha_hora_dev = tuple.fecha_hora_dev,
-        recorrido_final.est_destino = tuple.est_destino,
-        recorrido_final.est_origen = est_origen
-        WHERE tuple.usuario = recorrido_final.usuario AND tuple.fecha_hora_ret = recorrido_final.fecha_hora_ret AND tuple.fecha_hora_dev = recorrido_final.fecha_hora_dev;
-      END IF;
-
+      CASE
+        WHEN fecha_hora_ret<=tuple.fecha_hora_ret THEN
+          --DELETE FROM recorrido_final WHERE usuario = tuple.usuario AND (fecha_hora_ret <= tuple.fecha_hora_dev) AND (fecha_hora_dev >= tuple.fecha_hora_ret);
+          --INSERT INTO recorrido_final VALUES (periodo,usuario,fecha_hora_ret,est_origen,tuple.est_destino,tuple.fecha_hora_dev);
+        ELSE
       -- tupla de tabla solapa menor a tupla dada --
-      UPDATE recorrido_final SET
-      recorrido_final.fecha_hora_ret = tuple.fecha_hora_retiro,
-      recorrido_final.fecha_hora_dev = fecha_hora_dev,
-      recorrido_final.est_destino = est_destino,
-      recorrido_final.est_origen = tuple.est_origen
-      WHERE tuple.usuario = recorrido_final.usuario AND tuple.fecha_hora_ret = recorrido_final.fecha_hora_ret AND tuple.fecha_hora_dev = recorrido_final.fecha_hora_dev;
+          --DELETE FROM recorrido_final WHERE usuario = tuple.usuario AND (fecha_hora_ret <= tuple.fecha_hora_dev) AND (fecha_hora_dev >= tuple.fecha_hora_ret);
+          --INSERT INTO recorrido_final VALUES (periodo,usuario,tuple.fecha_hora_ret,tuple.est_origen,est_destino,fecha_hora_dev);
+      END CASE;
 
     END IF;
   END LOOP;
