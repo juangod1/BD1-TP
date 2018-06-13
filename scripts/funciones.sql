@@ -64,8 +64,6 @@ BEGIN
     tuple.id_usuario || tuple.fecha_hora_retiro = aux.id_usuario || aux.fecha_hora_retiro
     ORDER BY CAST(replace(replace(replace(aux.tiempo_uso, 'H ', 'H'), 'MIN ', 'M'), 'SEG', 'S') AS INTERVAL);
 
-    raise notice 'Loop';
-
     IF (select count(*) from matches)>1 then
       FOR match IN SELECT * FROM matches LOOP
       END LOOP;
@@ -127,8 +125,6 @@ RETURNS VOID AS $$
 #variable_conflict use_column
 DECLARE
 tuple RECORD;
-pperiodo TEXT = periodo;
-pusuario INTEGER = usuario;
 pfecha_hora_ret TIMESTAMP = fecha_hora_ret;
 pest_origen INTEGER = est_origen;
 pest_destino INTEGER = est_destino;
