@@ -41,8 +41,7 @@ CREATE TABLE matches
   destino_estacion TEXT,
   nombre_destino TEXT,
   tiempo_uso TEXT,
-  fecha_creacion TEXT,
-  PRIMARY KEY(destino_estacion,tiempo_uso)
+  fecha_creacion TEXT
 );
 
 
