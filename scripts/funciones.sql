@@ -30,6 +30,7 @@ CREATE TABLE aux
   fecha_creacion TEXT
 );
 
+
 CREATE TABLE matches
 (
   periodo TEXT,
@@ -41,19 +42,21 @@ CREATE TABLE matches
   nombre_destino TEXT,
   tiempo_uso TEXT,
   fecha_creacion TEXT,
-  PRIMARY KEY(id_usuario,fecha_hora_retiro,tiempo_uso)
+  PRIMARY KEY(destino_estacion,tiempo_uso)
 );
 
 
 \copy aux FROM test1.csv csv header delimiter ';'
 -- \copy aux FROM recorridos-realizados-2016.csv csv header delimiter ';'
 
+
 -- https://stackoverflow.com/questions/16195986/isnumeric-with-postgresql --
-CREATE OR REPLACE FUNCTION isnumeric(text) RETURNS BOOLEAN AS $$
-DECLARE x NUMERIC;
+CREATE OR REPLACE FUNCTION isInterval(text) RETURNS BOOLEAN AS $$
+DECLARE x INTERVAL;
 BEGIN
-    x = $1::NUMERIC;
+    x = $1::INTERVAL;
     RETURN TRUE;
+
 EXCEPTION WHEN others THEN
     RETURN FALSE;
 END;
@@ -73,16 +76,14 @@ DECLARE
     SELECT DISTINCT id_usuario, fecha_hora_retiro 
     FROM aux 
     WHERE id_usuario IS NOT NULL AND fecha_hora_retiro IS NOT NULL AND origen_estacion IS NOT NULL AND destino_estacion IS NOT NULL
-      AND tiempo_uso IS NOT NULL AND isnumeric(replace(replace(replace(tiempo_uso, 'H ', ''), 'MIN ', ''), 'SEG', '')) 
-      AND CAST(replace(replace(replace(tiempo_uso, 'H ', ''), 'MIN ', ''), 'SEG', '') AS INTEGER) >= 0
+      AND tiempo_uso IS NOT NULL AND isInterval(replace(replace(replace(tiempo_uso, 'H ', ''), 'MIN ', ''), 'SEG', ''))
     GROUP BY id_usuario, fecha_hora_retiro
     HAVING count(id_usuario) > 1;
 	cursor2 CURSOR FOR 
     SELECT * 
     FROM aux 
     WHERE id_usuario IS NOT NULL AND fecha_hora_retiro IS NOT NULL AND origen_estacion IS NOT NULL AND destino_estacion IS NOT NULL
-      AND tiempo_uso IS NOT NULL AND isnumeric(replace(replace(replace(tiempo_uso, 'H ', ''), 'MIN ', ''), 'SEG', '')) 
-      AND CAST(replace(replace(replace(tiempo_uso, 'H ', ''), 'MIN ', ''), 'SEG', '') AS INTEGER) >= 0;
+      AND tiempo_uso IS NOT NULL AND isInterval(replace(replace(replace(tiempo_uso, 'H ', ''), 'MIN ', ''), 'SEG', ''));
 BEGIN
 
   -------------------------------------
